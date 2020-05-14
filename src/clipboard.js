@@ -28,6 +28,7 @@ class Clipboard extends Emitter {
         this.target    = (typeof options.target    === 'function') ? options.target    : this.defaultTarget;
         this.text      = (typeof options.text      === 'function') ? options.text      : this.defaultText;
         this.container = (typeof options.container === 'object')   ? options.container : document.body;
+        this.enableKeyboardClick = (typeof options.enableKeyboardClick === 'function') ? options.enableKeyboardClick : this.defaultEnableKeyboardClick;
     }
 
     /**
@@ -44,9 +45,16 @@ class Clipboard extends Emitter {
      * @param {Event} e
      */
     onKeyUp(e) {
-        if(e.key === "Enter" || e.key === "Spacebar" || e.key === " ") {
-            //Treat this event as a click
-            this.onClick(e);
+        const trigger = e.delegateTarget || e.currentTarget;
+        const enabledOnElm = this.enableKeyboardClick(trigger);
+        if(enabledOnElm === true || enabledOnElm === "true") {
+            if (e.key === "Enter" || e.key === "Spacebar" || e.key === " ") {
+                //Treat this event as a click
+                this.onClick(e);
+                //this was for us, stop the event
+                e.stopPropagation();
+                e.preventDefault();
+            }
         }
     }
 
@@ -114,6 +122,10 @@ class Clipboard extends Emitter {
     defaultText(trigger) {
         return getAttributeValue('text', trigger);
     }
+
+    defaultEnableKeyboardClick(trigger) {
+    return getAttributeValue('enable-keyboard-click', trigger);
+}
 
     /**
      * Destroy lifecycle.
