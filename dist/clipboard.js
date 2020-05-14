@@ -151,79 +151,6 @@ module.exports = select;
 
 /***/ }),
 /* 1 */
-/***/ (function(module, exports) {
-
-function E () {
-  // Keep this empty so it's easier to inherit from
-  // (via https://github.com/lipsmack from https://github.com/scottcorgan/tiny-emitter/issues/3)
-}
-
-E.prototype = {
-  on: function (name, callback, ctx) {
-    var e = this.e || (this.e = {});
-
-    (e[name] || (e[name] = [])).push({
-      fn: callback,
-      ctx: ctx
-    });
-
-    return this;
-  },
-
-  once: function (name, callback, ctx) {
-    var self = this;
-    function listener () {
-      self.off(name, listener);
-      callback.apply(ctx, arguments);
-    };
-
-    listener._ = callback
-    return this.on(name, listener, ctx);
-  },
-
-  emit: function (name) {
-    var data = [].slice.call(arguments, 1);
-    var evtArr = ((this.e || (this.e = {}))[name] || []).slice();
-    var i = 0;
-    var len = evtArr.length;
-
-    for (i; i < len; i++) {
-      evtArr[i].fn.apply(evtArr[i].ctx, data);
-    }
-
-    return this;
-  },
-
-  off: function (name, callback) {
-    var e = this.e || (this.e = {});
-    var evts = e[name];
-    var liveEvents = [];
-
-    if (evts && callback) {
-      for (var i = 0, len = evts.length; i < len; i++) {
-        if (evts[i].fn !== callback && evts[i].fn._ !== callback)
-          liveEvents.push(evts[i]);
-      }
-    }
-
-    // Remove event from queue to prevent memory leak
-    // Suggested by https://github.com/lazd
-    // Ref: https://github.com/scottcorgan/tiny-emitter/commit/c6ebfaa9bc973b33d110a84a307742b7cf94c953#commitcomment-5024910
-
-    (liveEvents.length)
-      ? e[name] = liveEvents
-      : delete e[name];
-
-    return this;
-  }
-};
-
-module.exports = E;
-module.exports.TinyEmitter = E;
-
-
-/***/ }),
-/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var is = __webpack_require__(3);
@@ -321,6 +248,79 @@ function listenSelector(selector, type, callback) {
 }
 
 module.exports = listen;
+
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports) {
+
+function E () {
+  // Keep this empty so it's easier to inherit from
+  // (via https://github.com/lipsmack from https://github.com/scottcorgan/tiny-emitter/issues/3)
+}
+
+E.prototype = {
+  on: function (name, callback, ctx) {
+    var e = this.e || (this.e = {});
+
+    (e[name] || (e[name] = [])).push({
+      fn: callback,
+      ctx: ctx
+    });
+
+    return this;
+  },
+
+  once: function (name, callback, ctx) {
+    var self = this;
+    function listener () {
+      self.off(name, listener);
+      callback.apply(ctx, arguments);
+    };
+
+    listener._ = callback
+    return this.on(name, listener, ctx);
+  },
+
+  emit: function (name) {
+    var data = [].slice.call(arguments, 1);
+    var evtArr = ((this.e || (this.e = {}))[name] || []).slice();
+    var i = 0;
+    var len = evtArr.length;
+
+    for (i; i < len; i++) {
+      evtArr[i].fn.apply(evtArr[i].ctx, data);
+    }
+
+    return this;
+  },
+
+  off: function (name, callback) {
+    var e = this.e || (this.e = {});
+    var evts = e[name];
+    var liveEvents = [];
+
+    if (evts && callback) {
+      for (var i = 0, len = evts.length; i < len; i++) {
+        if (evts[i].fn !== callback && evts[i].fn._ !== callback)
+          liveEvents.push(evts[i]);
+      }
+    }
+
+    // Remove event from queue to prevent memory leak
+    // Suggested by https://github.com/lazd
+    // Ref: https://github.com/scottcorgan/tiny-emitter/commit/c6ebfaa9bc973b33d110a84a307742b7cf94c953#commitcomment-5024910
+
+    (liveEvents.length)
+      ? e[name] = liveEvents
+      : delete e[name];
+
+    return this;
+  }
+};
+
+module.exports = E;
+module.exports.TinyEmitter = E;
 
 
 /***/ }),
@@ -771,11 +771,11 @@ var clipboard_action_ClipboardAction = function () {
 
 /* harmony default export */ var clipboard_action = (clipboard_action_ClipboardAction);
 // EXTERNAL MODULE: ./node_modules/tiny-emitter/index.js
-var tiny_emitter = __webpack_require__(1);
+var tiny_emitter = __webpack_require__(2);
 var tiny_emitter_default = /*#__PURE__*/__webpack_require__.n(tiny_emitter);
 
 // EXTERNAL MODULE: ./node_modules/good-listener/src/listen.js
-var listen = __webpack_require__(2);
+var listen = __webpack_require__(1);
 var listen_default = /*#__PURE__*/__webpack_require__.n(listen);
 
 // CONCATENATED MODULE: ./src/clipboard.js
@@ -831,6 +831,7 @@ var clipboard_Clipboard = function (_Emitter) {
             this.target = typeof options.target === 'function' ? options.target : this.defaultTarget;
             this.text = typeof options.text === 'function' ? options.text : this.defaultText;
             this.container = clipboard_typeof(options.container) === 'object' ? options.container : document.body;
+            this.enableKeyboardClick = typeof options.enableKeyboardClick === 'function' ? options.enableKeyboardClick : this.defaultEnableKeyboardClick;
         }
 
         /**
@@ -846,6 +847,30 @@ var clipboard_Clipboard = function (_Emitter) {
             this.listener = listen_default()(trigger, 'click', function (e) {
                 return _this2.onClick(e);
             });
+            this.keyListener = listen_default()(trigger, 'keyup', function (e) {
+                return _this2.onKeyUp(e);
+            });
+        }
+
+        /**
+         * Checks for a space or enter keypress as accessible activation
+         * @param {Event} e
+         */
+
+    }, {
+        key: 'onKeyUp',
+        value: function onKeyUp(e) {
+            var trigger = e.delegateTarget || e.currentTarget;
+            var enabledOnElm = this.enableKeyboardClick(trigger);
+            if (enabledOnElm === true || enabledOnElm === "true") {
+                if (e.key === "Enter" || e.key === "Spacebar" || e.key === " ") {
+                    //Treat this event as a click
+                    this.onClick(e);
+                    //this was for us, stop the event
+                    e.stopPropagation();
+                    e.preventDefault();
+                }
+            }
         }
 
         /**
@@ -915,6 +940,11 @@ var clipboard_Clipboard = function (_Emitter) {
         value: function defaultText(trigger) {
             return getAttributeValue('text', trigger);
         }
+    }, {
+        key: 'defaultEnableKeyboardClick',
+        value: function defaultEnableKeyboardClick(trigger) {
+            return getAttributeValue('enable-keyboard-click', trigger);
+        }
 
         /**
          * Destroy lifecycle.
@@ -924,6 +954,7 @@ var clipboard_Clipboard = function (_Emitter) {
         key: 'destroy',
         value: function destroy() {
             this.listener.destroy();
+            this.keyListener.destroy();
 
             if (this.clipboardAction) {
                 this.clipboardAction.destroy();
