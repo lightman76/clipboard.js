@@ -74,6 +74,12 @@ describe('Clipboard', () => {
             assert.isObject(clipboard.listener);
         });
     });
+    describe('#listenKeyUp', () => {
+        it('should add a key up event listener to the passed selector', () => {
+            let clipboard = new Clipboard('.btn');
+            assert.isObject(clipboard.keyListener);
+        });
+    });
 
     describe('#onClick', () => {
         it('should create a new instance of ClipboardAction', () => {

@@ -36,6 +36,18 @@ class Clipboard extends Emitter {
      */
     listenClick(trigger) {
         this.listener = listen(trigger, 'click', (e) => this.onClick(e));
+        this.keyListener = listen(trigger, 'keyup', (e) => this.onKeyUp(e));
+    }
+
+    /**
+     * Checks for a space or enter keypress as accessible activation
+     * @param {Event} e
+     */
+    onKeyUp(e) {
+        if(e.key === "Enter" || e.key === "Spacebar" || e.key === " ") {
+            //Treat this event as a click
+            this.onClick(e);
+        }
     }
 
     /**
@@ -108,6 +120,7 @@ class Clipboard extends Emitter {
      */
     destroy() {
         this.listener.destroy();
+        this.keyListener.destroy();
 
         if (this.clipboardAction) {
             this.clipboardAction.destroy();
