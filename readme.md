@@ -96,6 +96,21 @@ Truth is, you don't even need another element to copy its content from. You can 
 </button>
 ```
 
+### Using on non-native trigger elements
+
+If the element you are using as a trigger to copy isn't a native button or link, you can enable users to use the space 
+and enter keys to trigger the copy (for keyboard accessibility) by adding 
+the `data-clipboard-enable-keyboard-click="true"` attribute in your trigger element. To actually make it accessible
+you'll also need to specify the tabindex, role, etc. attributes normally required.  
+
+```html
+<!-- Trigger -->
+<div class="fake-btn" data-clipboard-enable-keyboard-click="true" data-clipboard-text="Example text" role="button" tabindex="0">
+    Copy to clipboard
+</div>
+```
+
+
 ## Events
 
 There are cases where you'd like to show some user feedback or capture what has been selected after a copy/cut operation.
